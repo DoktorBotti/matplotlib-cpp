@@ -717,6 +717,27 @@ void plot3(const std::vector<Numeric> & x,
 		}
 	}
 
+	static PyObject * axis = nullptr;
+	if (axis == nullptr)
+	{
+		PyObject * fig = PyObject_CallObject(
+		    matplotlibcpp::detail::_interpreter::get().s_python_function_figure,
+		    matplotlibcpp::detail::_interpreter::get().s_python_empty_tuple);
+
+		PyObject * gca_kwargs = PyDict_New();
+		PyDict_SetItemString(
+		    gca_kwargs, "projection", PyString_FromString("3d"));
+
+		PyObject * gca = PyObject_GetAttrString(fig, "gca");
+		if (!gca)
+			throw std::runtime_error("No gca");
+		Py_INCREF(gca);
+		axis = PyObject_Call(
+		    gca,
+		    matplotlibcpp::detail::_interpreter::get().s_python_empty_tuple,
+		    gca_kwargs);
+	}
+
 	assert(x.size() == y.size());
 	assert(y.size() == z.size());
 
@@ -742,28 +763,12 @@ void plot3(const std::vector<Numeric> & x,
 		    kwargs, it->first.c_str(), PyString_FromString(it->second.c_str()));
 	}
 
-	PyObject * fig = PyObject_CallObject(
-	    detail::_interpreter::get().s_python_function_figure,
-	    detail::_interpreter::get().s_python_empty_tuple);
-	if (!fig)
-		throw std::runtime_error("Call to figure() failed.");
-
-	PyObject * gca_kwargs = PyDict_New();
-	PyDict_SetItemString(gca_kwargs, "projection", PyString_FromString("3d"));
-
-	PyObject * gca = PyObject_GetAttrString(fig, "gca");
-	if (!gca)
-		throw std::runtime_error("No gca");
-	Py_INCREF(gca);
-	PyObject * axis = PyObject_Call(
-	    gca, detail::_interpreter::get().s_python_empty_tuple, gca_kwargs);
-
 	if (!axis)
 		throw std::runtime_error("No axis");
 	Py_INCREF(axis);
 
-	Py_DECREF(gca);
-	Py_DECREF(gca_kwargs);
+	// Py_DECREF(gca);
+	// Py_DECREF(gca_kwargs);
 
 	PyObject * plot3 = PyObject_GetAttrString(axis, "plot");
 	if (!plot3)
